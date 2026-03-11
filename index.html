@@ -2,16 +2,15 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <!-- 关键：确保视口设置正确，允许缩放但默认宽度为设备宽度 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🧩 词句重组 · 多题挑战</title>
-    <!-- SortableJS 轻量拖拽库 (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -20,43 +19,84 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', '幼圆', 'Yuanti SC', sans-serif;
-            padding: 6px;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', '幼圆', Yuanti SC, sans-serif;
+            padding: 16px;
             margin: 0;
-            touch-action: pan-y; /* 允许垂直滚动 */
+            touch-action: pan-y;
         }
 
         .game-box {
             max-width: 1100px;
             width: 100%;
-            background-color: rgba(255, 251, 240, 0.9);
+            background-color: rgba(255, 251, 240, 0.8);
             backdrop-filter: blur(8px);
-            border-radius: 40px 40px 30px 30px;
-            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2), 0 0 0 5px #ffeecc inset;
-            padding: 18px 12px 25px 12px;
-            border: 4px solid #ffb882;
+            border-radius: 72px 72px 48px 48px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2), 0 0 0 8px #ffeecc inset;
+            padding: 30px 24px 40px 24px;
+            border: 5px solid #ffb882;
+            transition: all 0.2s;
         }
 
         h1 {
-            font-size: min(8vw, 2.8rem);
+            font-size: 2.8rem;
             text-align: center;
             color: #9b5e2e;
-            text-shadow: 2px 2px 0 #ffd78c, 3px 3px 0 rgba(0,0,0,0.1);
-            margin-bottom: 5px;
-            line-height: 1.2;
+            text-shadow: 4px 4px 0 #ffd78c, 6px 6px 0 rgba(0,0,0,0.1);
+            letter-spacing: 2px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        /* 顶部信息栏（包含副标题和朗读开关） */
+        .top-info-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .subhead {
-            font-size: min(5vw, 1.7rem);
+            font-size: 1.7rem;
             font-weight: bold;
             color: #bd7a4a;
             background: #fffae9;
-            display: inline-block;
-            padding: 0.3rem 1.2rem;
-            margin: 0 auto 12px auto;
-            border-radius: 40px;
-            box-shadow: 0 4px 0 #e5b887;
+            padding: 0.4rem 2rem;
+            border-radius: 60px;
+            box-shadow: 0 6px 0 #e5b887;
             border: 3px solid #f5b777;
+        }
+
+        /* 朗读开关按钮样式 */
+        .tts-btn {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #f5f5f5;
+            border: 3px solid #d9d9d9;
+            box-shadow: 0 6px 0 #bfbfbf;
+            color: #8c8c8c;
+            cursor: pointer;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            transition: all 0.1s linear;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tts-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #bfbfbf;
+        }
+        .tts-btn.active {
+            background: #e6ffed;
+            border-color: #73d13d;
+            box-shadow: 0 6px 0 #52c41a;
+            color: #237804;
+        }
+        .tts-btn.active:active {
+            box-shadow: 0 2px 0 #52c41a;
         }
 
         /* 导航栏 + 题号 */
@@ -65,147 +105,146 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            gap: 8px 12px;
+            gap: 15px 20px;
             background: #fbe6c0;
-            border-radius: 50px;
-            padding: 10px 12px;
-            margin: 5px 0 18px 0;
-            border: 4px solid #f5b072;
-            box-shadow: 0 5px 0 #c17d3f;
+            border-radius: 60px;
+            padding: 15px 25px;
+            margin: 5px 0 25px 0;
+            border: 5px solid #f5b072;
+            box-shadow: 0 8px 0 #c17d3f;
         }
 
         .question-badge {
-            font-size: min(5vw, 2rem);
+            font-size: 2.2rem;
             font-weight: bold;
             background: #fcf3da;
-            padding: 6px 16px;
-            border-radius: 40px;
-            border: 3px solid #d4924b;
+            padding: 10px 30px;
+            border-radius: 60px;
+            border: 4px solid #d4924b;
             color: #5f3a14;
             white-space: nowrap;
         }
 
         .nav-btn {
-            font-size: min(4.5vw, 1.8rem);
+            font-size: 2rem;
             font-weight: bold;
             background: #ffdbb5;
-            border: 4px solid #e5944a;
-            box-shadow: 0 5px 0 #aa5f25;
+            border: 5px solid #e5944a;
+            box-shadow: 0 8px 0 #aa5f25;
             color: #572f0c;
             cursor: pointer;
-            padding: 6px 16px;
-            border-radius: 40px;
+            padding: 12px 30px;
+            border-radius: 50px;
             transition: all 0.06s linear;
             touch-action: manipulation;
+            line-height: 1.2;
         }
         .nav-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 #aa5f25;
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #aa5f25;
         }
         .nav-btn:disabled {
             opacity: 0.5;
-            transform: translateY(3px);
-            box-shadow: 0 2px 0 #aa5f25;
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #aa5f25;
             pointer-events: none;
         }
 
         /* 目标句子提示牌 - 默认隐藏 */
         .target-sentence {
             background: #b5e1b9;
-            border: 4px dashed #2b6e3f;
-            border-radius: 40px;
-            padding: 12px 10px;
-            margin: 12px 0 20px 0;
+            border: 5px dashed #2b6e3f;
+            border-radius: 50px;
+            padding: 18px 20px;
+            margin: 20px 5px 35px 5px;
             display: none;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 8px 12px;
-            box-shadow: 0 6px 0 #56803b;
+            gap: 12px 20px;
+            box-shadow: 0 12px 0 #56803b;
         }
         .target-sentence.visible {
             display: flex;
         }
         .target-label {
-            font-size: min(6vw, 2rem);
+            font-size: 2rem;
             background: #fefbda;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            display: flex;
+            width: 65px;
+            height: 65px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 3px solid #3f8520;
+            border: 4px solid #3f8520;
             color: #235c0e;
             font-weight: bold;
-            box-shadow: 0 3px 0 #3f8520;
+            box-shadow: 0 5px 0 #3f8520;
+            flex-shrink: 0;
         }
         .target-words {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 6px 8px;
+            gap: 12px 10px;
         }
         .target-word-chip {
             background: #fefbda;
-            font-size: min(4.5vw, 1.8rem);
-            padding: 6px 12px;
-            border-radius: 40px;
-            border: 3px solid #3f8520;
+            font-size: 2rem;
+            padding: 10px 25px;
+            border-radius: 48px;
+            border: 4px solid #3f8520;
             font-weight: bold;
             color: #235c0e;
-            box-shadow: 0 3px 0 #2b6e3f;
+            box-shadow: 0 6px 0 #2b6e3f;
+            transform: translateY(-2px);
             white-space: nowrap;
         }
 
-        /* 可拖拽卡片区域 - 保证背景可见 */
+        /* 可拖拽卡片区域 */
         .drag-area {
             background: #fce2b1;
-            border-radius: 50px 50px 25px 25px;
-            padding: 20px 10px;
-            border: 4px solid #e5a157;
-            box-shadow: inset 0 -3px 0 #c57c3c, 0 12px 15px rgba(160, 100, 40, 0.3);
-            margin-bottom: 20px;
-            min-height: 140px; /* 确保即使无卡片也有高度 */
+            border-radius: 80px 80px 40px 40px;
+            padding: 35px 25px;
+            border: 5px solid #e5a157;
+            box-shadow: inset 0 -5px 0 #c57c3c, 0 20px 25px rgba(160, 100, 40, 0.3);
+            margin-bottom: 35px;
         }
         .sortable-list {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px 8px;
+            gap: 18px 20px;
             list-style: none;
             padding: 0;
             margin: 0;
-            min-height: 100px;
+            min-height: 150px;
         }
         .word-item {
             background: #ffd58c;
-            background-image: radial-gradient(circle at 8px 8px, #ffe3ac, #ffbe5e);
-            font-size: min(6vw, 2.2rem);  /* 动态调整，最大2.2rem */
+            background-image: radial-gradient(circle at 10px 10px, #ffe3ac, #ffbe5e);
+            font-size: 2.4rem;
             font-weight: 800;
             color: #3f280b;
-            padding: 10px 18px;
-            border-radius: 50px;
-            border: 4px solid #f0872b;
-            box-shadow: 0 6px 0 #b35f1b, 0 5px 10px rgba(0,0,0,0.2);
+            padding: 20px 28px;
+            border-radius: 68px;
+            border: 5px solid #f0872b;
+            box-shadow: 0 12px 0 #b35f1b, 0 15px 15px rgba(0,0,0,0.2);
             cursor: grab;
             transition: transform 0.15s, box-shadow 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            white-space: normal;        /* 允许换行 */
-            word-break: keep-all;       /* 中文词语不断开 */
-            max-width: 85vw;            /* 最大宽度为视口的85% */
-            line-height: 1.3;
+            white-space: nowrap;
             user-select: none;
             -webkit-touch-callout: none;
-            touch-action: none;          /* 防止拖动时页面滚动 */
+            touch-action: none;
+            line-height: 1.2;
+            letter-spacing: 1px;
         }
-
-        /* 多彩卡片背景 */
+        
         .word-item:nth-child(1) { background: #ffb47b; border-color: #d45d2c; }
-        .word-item:nth-child(2) { background: #a9d6e5; border-color: #2a7f9c; box-shadow: 0 6px 0 #1b5f77; }
+        .word-item:nth-child(2) { background: #a9d6e5; border-color: #2a7f9c; box-shadow: 0 12px 0 #1b5f77; }
         .word-item:nth-child(3) { background: #f7c35c; border-color: #c58a1a; }
         .word-item:nth-child(4) { background: #c5a1ff; border-color: #6a3bb3; }
         .word-item:nth-child(5) { background: #ffa5d2; border-color: #ba2d7a; }
@@ -215,117 +254,167 @@
 
         .word-item:active {
             cursor: grabbing;
-            transform: scale(0.97);
+            transform: scale(0.98);
             filter: brightness(0.96);
         }
         .sortable-ghost {
             opacity: 0.4;
             background: #c0c0c0 !important;
-            border: 4px dashed #888 !important;
+            border: 5px dashed #888 !important;
             box-shadow: none !important;
         }
         .sortable-drag {
             opacity: 0.9;
-            transform: rotate(1deg) scale(1.03);
-            box-shadow: 0 15px 20px rgba(0,0,0,0.4) !important;
+            transform: rotate(2deg) scale(1.05);
+            box-shadow: 0 20px 25px rgba(0,0,0,0.5) !important;
         }
 
         .button-panel {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px 8px;
-            margin: 15px 0 12px 0;
+            gap: 18px;
+            margin: 30px 0 20px 0;
         }
         .btn {
-            font-size: min(4.5vw, 1.8rem);
+            font-size: 2rem;
             font-weight: bold;
-            padding: 10px 16px;
+            padding: 16px 28px;
             border: none;
-            border-radius: 50px;
+            border-radius: 80px;
             background-color: #fcf3da;
-            border: 4px solid #fcb375;
-            box-shadow: 0 5px 0 #b16421, 0 5px 10px rgba(0,0,0,0.2);
+            border: 5px solid #fcb375;
+            box-shadow: 0 9px 0 #b16421, 0 10px 20px rgba(0,0,0,0.2);
             color: #6b3f12;
             cursor: pointer;
             transition: all 0.06s linear;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            gap: 10px;
             flex: 0 1 auto;
             touch-action: manipulation;
         }
         .btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 #b16421, 0 5px 10px rgba(0,0,0,0.1);
+            transform: translateY(7px);
+            box-shadow: 0 4px 0 #b16421, 0 10px 20px rgba(0,0,0,0.1);
         }
-        .btn.check { background: #c9e3ae; border-color: #509e2c; box-shadow: 0 5px 0 #36701a; color: #1b4e0a; }
-        .btn.reset { background: #ffcfb0; border-color: #e2723b; box-shadow: 0 5px 0 #9e4d21; }
-        .btn.shuffle { background: #b5d8ff; border-color: #3c82c9; box-shadow: 0 5px 0 #1d4f8b; }
-        .btn.answer { background: #fcc0dd; border-color: #c63b7c; box-shadow: 0 5px 0 #872253; color: #4f1836; }
+        .btn.check { background: #c9e3ae; border-color: #509e2c; box-shadow: 0 9px 0 #36701a; color: #1b4e0a; }
+        .btn.reset { background: #ffcfb0; border-color: #e2723b; box-shadow: 0 9px 0 #9e4d21; }
+        .btn.shuffle { background: #b5d8ff; border-color: #3c82c9; box-shadow: 0 9px 0 #1d4f8b; }
+        .btn.answer { background: #fcc0dd; border-color: #c63b7c; box-shadow: 0 9px 0 #872253; color: #4f1836; }
 
         .result-area {
             background: #ffeac2;
-            border-radius: 40px;
-            padding: 15px 12px;
-            margin-top: 15px;
+            border-radius: 50px;
+            padding: 22px 20px;
+            margin-top: 30px;
             text-align: center;
-            font-size: min(4.5vw, 2rem);
+            font-size: 2.2rem;
             font-weight: bold;
-            border: 4px solid #e7a14e;
-            box-shadow: inset 0 -2px 0 #b46f2b, 0 5px 0 #9b601d;
+            border: 5px solid #e7a14e;
+            box-shadow: inset 0 -4px 0 #b46f2b, 0 8px 0 #9b601d;
             color: #5a3000;
         }
-        .result-emoji { font-size: 2.2rem; margin-right: 8px; vertical-align: middle; }
+        .result-emoji { font-size: 3rem; margin-right: 15px; vertical-align: middle; }
 
         .footer-hint {
-            font-size: min(4vw, 1.5rem);
+            font-size: 1.7rem;
             color: #a1581c;
-            margin: 15px 0 5px 0;
+            margin: 25px 0 5px 0;
             text-align: center;
             background: #fcf0d6;
-            border-radius: 30px;
-            padding: 5px 10px;
+            border-radius: 40px;
+            padding: 8px 15px;
             border: 3px solid #eb9f5a;
         }
 
-        /* 极端小屏幕的额外缩小 */
-        @media (max-width: 380px) {
-            .word-item {
-                font-size: min(5.5vw, 1.8rem);
-                padding: 8px 12px;
+        /* 移动端全方位适配方案 */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .game-box {
+                padding: 20px 15px 25px 15px;
+                border-radius: 40px 40px 30px 30px;
+                border-width: 4px;
             }
-            .btn {
-                font-size: min(4vw, 1.5rem);
-                padding: 8px 12px;
+            h1 { font-size: 2rem; text-shadow: 3px 3px 0 #ffd78c; }
+            .top-info-bar { margin-bottom: 15px; }
+            .subhead { font-size: 1.3rem; padding: 0.3rem 1.2rem; }
+            .tts-btn { font-size: 1.2rem; padding: 0.4rem 1rem; }
+            
+            /* 导航栏变紧凑 */
+            .nav-panel { padding: 12px 15px; gap: 10px; border-radius: 40px; border-width: 4px; }
+            .question-badge { font-size: 1.4rem; padding: 8px 15px; border-width: 3px; }
+            .nav-btn { font-size: 1.3rem; padding: 8px 15px; border-width: 3px; box-shadow: 0 5px 0 #aa5f25; }
+            .nav-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #aa5f25; }
+
+            /* 答案提示牌 */
+            .target-sentence { padding: 12px; margin: 15px 0 20px 0; border-width: 3px; border-radius: 30px; }
+            .target-label { width: 45px; height: 45px; font-size: 1.6rem; border-width: 3px; box-shadow: 0 4px 0 #3f8520; }
+            .target-word-chip { font-size: 1.4rem; padding: 8px 16px; border-width: 3px; box-shadow: 0 4px 0 #2b6e3f; }
+
+            /* 词组拖拽区缩放 */
+            .drag-area { padding: 25px 15px; border-radius: 50px 50px 25px 25px; border-width: 4px; margin-bottom: 25px; }
+            .sortable-list { gap: 12px; min-height: 100px; }
+            .word-item { 
+                font-size: 1.6rem; 
+                padding: 12px 20px; 
+                border-radius: 40px; 
+                border-width: 3px; 
+                box-shadow: 0 8px 0 #b35f1b, 0 8px 10px rgba(0,0,0,0.15); 
             }
+
+            /* 底部四个按钮在手机上变成 2x2 网格 */
+            .button-panel { gap: 12px; margin: 20px 0 15px 0; }
+            .btn { 
+                font-size: 1.3rem; 
+                padding: 12px 10px; 
+                border-width: 3px; 
+                box-shadow: 0 6px 0 #b16421; 
+                flex: 1 1 45%; 
+            }
+            .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b16421; }
+
+            .result-area { font-size: 1.5rem; padding: 15px; margin-top: 20px; border-width: 3px; border-radius: 30px; }
+            .result-emoji { font-size: 2rem; margin-right: 8px; }
+            .footer-hint { font-size: 1.1rem; padding: 8px 10px; margin-top: 15px; }
+        }
+
+        /* 针对超小屏幕手机 */
+        @media (max-width: 360px) {
+            .word-item { font-size: 1.4rem; padding: 10px 16px; }
+            .btn { font-size: 1.1rem; }
+            .question-badge { font-size: 1.2rem; }
+            .nav-btn { font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
     <div class="game-box">
         <h1>✨ 词句小侦探 ✨</h1>
-        <div style="text-align: center;"><span class="subhead">多题挑战 · 拖拖乐</span></div>
+        
+        <div class="top-info-bar">
+            <span class="subhead">多题挑战 · 拖拖乐</span>
+            <button id="ttsToggleBtn" class="tts-btn">🔇 朗读: 关</button>
+        </div>
 
-        <!-- 导航 + 题号 -->
         <div class="nav-panel">
             <button class="nav-btn" id="prevBtn" disabled>◀ 上一题</button>
             <span class="question-badge" id="questionCounter">第 1 / 24 题</span>
             <button class="nav-btn" id="nextBtn">下一题 ▶</button>
         </div>
 
-        <!-- 目标句子提示牌（默认隐藏） -->
         <div id="targetSentence" class="target-sentence">
             <span class="target-label">🎯</span>
-            <div class="target-words" id="targetWordsContainer"></div>
+            <div class="target-words" id="targetWordsContainer">
+                </div>
         </div>
 
-        <!-- 可拖拽卡片区域 - 卡片会动态生成在这里 -->
         <div class="drag-area">
-            <div id="sortable-list" class="sortable-list"></div>
+            <div id="sortable-list" class="sortable-list">
+                </div>
         </div>
 
-        <!-- 控制按钮组 -->
         <div class="button-panel">
             <button class="btn check" id="checkBtn">✅ 检查答案</button>
             <button class="btn reset" id="resetBtn">🔄 重置顺序</button>
@@ -333,7 +422,6 @@
             <button class="btn answer" id="answerBtn">🔍 显示答案</button>
         </div>
 
-        <!-- 结果显示区 -->
         <div class="result-area" id="resultMessage">
             <span class="result-emoji">🧸</span> 等你来排列～
         </div>
@@ -344,38 +432,37 @@
 
     <script>
         (function() {
-            // ---------- 题库 (24题, 5~8个词语) ----------
+            // ---------- 题库 ----------
             const questions = [
-                { correct: ["我们", "应该", "一起", "爱护", "花草树木"] },
-                { correct: ["今天", "我", "去", "公园", "玩"] },
-                { correct: ["妈妈", "每天", "给", "我", "讲", "故事"] },
-                { correct: ["小猫", "喜欢", "吃", "鱼", "和", "睡觉"] },
-                { correct: ["我", "有", "一个", "温暖", "的", "家"] },
-                { correct: ["太阳", "从", "东方", "慢慢", "升起"] },
-                { correct: ["请", "你", "把", "玩具", "收拾", "整齐"] },
-                { correct: ["小朋友", "们", "在", "操场", "上", "跑步"] },
-                { correct: ["这", "本", "书", "非常", "有趣"] },
-                { correct: ["爸爸", "下班", "回家", "总是", "很晚"] },
-                { correct: ["我", "想", "吃", "苹果", "和", "香蕉"] },
-                { correct: ["爷爷", "奶奶", "喜欢", "在", "河边", "散步"] },
-                { correct: ["春天", "来了", "花儿", "开了", "真美"] },
-                { correct: ["大家", "都", "要", "爱护", "环境"] },
-                { correct: ["我", "会", "自己", "穿", "衣服", "了"] },
-                { correct: ["小燕子", "在", "屋檐下", "忙碌地", "筑巢"] },
-                { correct: ["我", "喜欢", "和", "朋友", "一起", "分享", "玩具"] },
-                { correct: ["请你", "不要", "在", "教室", "里", "大声", "喧哗"] },
-                { correct: ["夜晚", "天空", "中", "有", "无数", "星星"] },
-                { correct: ["我们", "要", "节约", "用水", "用电"] },
-                { correct: ["小兔子", "爱吃", "萝卜", "和", "青菜"] },
-                { correct: ["老师", "教", "我们", "唱歌", "跳舞"] },
-                { correct: ["河边", "有", "一只", "白色", "的", "天鹅"] },
-                { correct: ["妹妹", "把", "糖果", "偷偷", "藏", "了", "起来"] }
+                { correct: ["我们", "应该", "一起", "爱护", "花草树木"] }, 
+                { correct: ["今天", "我", "去", "公园", "玩"] }, 
+                { correct: ["妈妈", "每天", "给", "我", "讲", "故事"] }, 
+                { correct: ["小猫", "喜欢", "吃", "鱼", "和", "睡觉"] }, 
+                { correct: ["我", "有", "一个", "温暖", "的", "家"] }, 
+                { correct: ["太阳", "从", "东方", "慢慢", "升起"] }, 
+                { correct: ["请", "你", "把", "玩具", "收拾", "整齐"] }, 
+                { correct: ["小朋友", "们", "在", "操场", "上", "跑步"] }, 
+                { correct: ["这", "本", "书", "非常", "有趣"] }, 
+                { correct: ["爸爸", "下班", "回家", "总是", "很晚"] }, 
+                { correct: ["我", "想", "吃", "苹果", "和", "香蕉"] }, 
+                { correct: ["爷爷", "奶奶", "喜欢", "在", "河边", "散步"] }, 
+                { correct: ["春天", "来了", "花儿", "开了", "真美"] }, 
+                { correct: ["大家", "都", "要", "爱护", "环境"] }, 
+                { correct: ["我", "会", "自己", "穿", "衣服", "了"] }, 
+                { correct: ["小燕子", "在", "屋檐下", "忙碌地", "筑巢"] }, 
+                { correct: ["我", "喜欢", "和", "朋友", "一起", "分享", "玩具"] }, 
+                { correct: ["请你", "不要", "在", "教室", "里", "大声", "喧哗"] }, 
+                { correct: ["夜晚", "天空", "中", "有", "无数", "星星"] }, 
+                { correct: ["我们", "要", "节约", "用水", "用电"] }, 
+                { correct: ["小兔子", "爱吃", "萝卜", "和", "青菜"] }, 
+                { correct: ["老师", "教", "我们", "唱歌", "跳舞"] }, 
+                { correct: ["河边", "有", "一只", "白色", "的", "天鹅"] }, 
+                { correct: ["妹妹", "把", "糖果", "偷偷", "藏", "了", "起来"] } 
             ];
 
             let currentIndex = 0;
             const totalQuestions = questions.length;
 
-            // DOM 元素
             const container = document.getElementById('sortable-list');
             const targetSentenceDiv = document.getElementById('targetSentence');
             const targetWordsContainer = document.getElementById('targetWordsContainer');
@@ -384,18 +471,70 @@
             const nextBtn = document.getElementById('nextBtn');
             const questionCounter = document.getElementById('questionCounter');
 
-            // 初始化 Sortable (拖拽)
+            // --- 朗读功能逻辑 ---
+            let isReadAloudEnabled = false;
+            const ttsToggleBtn = document.getElementById('ttsToggleBtn');
+
+            // 切换朗读开关
+            ttsToggleBtn.addEventListener('click', () => {
+                isReadAloudEnabled = !isReadAloudEnabled;
+                if (isReadAloudEnabled) {
+                    ttsToggleBtn.textContent = '🔊 朗读: 开';
+                    ttsToggleBtn.classList.add('active');
+                    // 第一次开启时可以给个小提示音，或者仅初始化
+                    if(window.speechSynthesis) { window.speechSynthesis.cancel(); }
+                } else {
+                    ttsToggleBtn.textContent = '🔇 朗读: 关';
+                    ttsToggleBtn.classList.remove('active');
+                    if(window.speechSynthesis) { window.speechSynthesis.cancel(); }
+                }
+            });
+
+            // 朗读文本的函数
+            function speakText(text) {
+                if (!isReadAloudEnabled || !window.speechSynthesis) return;
+                
+                // 停止当前正在播放的声音，避免声音堆叠
+                window.speechSynthesis.cancel(); 
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN'; // 设置为中文
+                utterance.rate = 1.0;     // 语速
+                utterance.pitch = 1.2;    // 音调稍微调高一点，听起来更生动
+                
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // 事件委托：当鼠标移入 (电脑端)
+            container.addEventListener('mouseover', function(e) {
+                const wordItem = e.target.closest('.word-item');
+                if (wordItem) {
+                    speakText(wordItem.textContent);
+                }
+            });
+
+            // 事件委托：当手指触摸 (手机端) 
+            // {passive: true} 防止阻塞屏幕滚动或拖拽事件
+            container.addEventListener('touchstart', function(e) {
+                const wordItem = e.target.closest('.word-item');
+                if (wordItem) {
+                    speakText(wordItem.textContent);
+                }
+            }, { passive: true });
+            // --------------------
+
             let sortableInstance = new Sortable(container, {
                 animation: 200,
                 ghostClass: 'sortable-ghost',
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
                 easing: "cubic-bezier(0.4, 0.0, 0.2, 1)",
-                touchStartThreshold: 2,
+                delay: 100, 
+                delayOnTouchOnly: true,
+                fallbackTolerance: 5, 
                 direction: 'horizontal',
                 forceFallback: false,
                 onEnd: function() {
-                    // 用户拖拽后隐藏答案提示，更新提示语
                     targetSentenceDiv.classList.remove('visible');
                     resultDiv.innerHTML = '<span class="result-emoji">🐼</span> 继续调整～ 好了就点“检查答案”！';
                     resultDiv.style.background = '#ffeac2';
@@ -403,7 +542,6 @@
                 }
             });
 
-            // 打乱数组 (用于初始显示)
             function shuffleArray(arr) {
                 const a = [...arr];
                 for (let i = a.length - 1; i > 0; i--) {
@@ -413,7 +551,6 @@
                 return a;
             }
 
-            // 更新顶部答案提示牌 (隐藏或显示由类控制)
             function updateTargetChips(correctArr) {
                 targetWordsContainer.innerHTML = '';
                 correctArr.forEach(word => {
@@ -424,12 +561,11 @@
                 });
             }
 
-            // 渲染当前题目 (创建卡片，打乱顺序)
             function renderCurrentQuestion() {
                 const correct = questions[currentIndex].correct;
                 updateTargetChips(correct);
                 const shuffled = shuffleArray(correct);
-                container.innerHTML = '';  // 清空原有卡片
+                container.innerHTML = '';
                 shuffled.forEach(word => {
                     const div = document.createElement('div');
                     div.className = 'word-item';
@@ -437,35 +573,34 @@
                     div.setAttribute('data-word', word);
                     container.appendChild(div);
                 });
-                // 确保答案框隐藏
                 targetSentenceDiv.classList.remove('visible');
-                // 重置提示信息
                 resultDiv.innerHTML = '<span class="result-emoji">🧸</span> 新题目！来排一排吧～';
                 resultDiv.style.background = '#ffeac2';
                 resultDiv.style.borderColor = '#e7a14e';
-                // 更新题号
                 questionCounter.textContent = `第 ${currentIndex+1} / ${totalQuestions} 题`;
-                // 更新按钮状态
                 prevBtn.disabled = (currentIndex === 0);
                 nextBtn.disabled = (currentIndex === totalQuestions - 1);
             }
 
-            // 获取当前卡片顺序 (文本数组)
             function getCurrentWordOrder() {
                 const items = document.querySelectorAll('#sortable-list .word-item');
                 return Array.from(items).map(item => item.textContent.trim());
             }
 
-            // 检查答案
             function checkAnswer() {
                 const currentOrder = getCurrentWordOrder();
                 const correct = questions[currentIndex].correct;
                 const isCorrect = currentOrder.length === correct.length && 
                                   currentOrder.every((word, idx) => word === correct[idx]);
+                
+                // 如果答对了，而且开启了朗读，可以读出完整的句子！
                 if (isCorrect) {
                     resultDiv.innerHTML = '<span class="result-emoji">🏆✨</span> 太棒啦！顺序完全正确！ ✨🏆';
                     resultDiv.style.background = '#d9ffb8';
                     resultDiv.style.borderColor = '#58b82e';
+                    if (isReadAloudEnabled) {
+                        speakText("太棒啦！" + correct.join("")); 
+                    }
                 } else {
                     resultDiv.innerHTML = '<span class="result-emoji">🤔🔍</span> 再试试看？调整一下词语顺序吧～';
                     resultDiv.style.background = '#ffeac2';
@@ -473,7 +608,6 @@
                 }
             }
 
-            // 事件绑定
             document.getElementById('checkBtn').addEventListener('click', checkAnswer);
 
             document.getElementById('resetBtn').addEventListener('click', function() {
@@ -496,7 +630,6 @@
             document.getElementById('shuffleBtn').addEventListener('click', function() {
                 const items = document.querySelectorAll('#sortable-list .word-item');
                 const itemArray = Array.from(items);
-                // Fisher-Yates 打乱并重新插入
                 const shuffledArray = [...itemArray];
                 for (let i = shuffledArray.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -521,6 +654,11 @@
                 resultDiv.innerHTML = '<span class="result-emoji">🌟</span> 这是正确的顺序！你可以参考它～';
                 resultDiv.style.background = '#c5e0ff';
                 resultDiv.style.borderColor = '#3b8bc9';
+                
+                // 如果开启了朗读，显示答案时自动朗读整句
+                if (isReadAloudEnabled) {
+                    speakText(correct.join(""));
+                }
             });
 
             prevBtn.addEventListener('click', function() {
@@ -537,15 +675,12 @@
                 }
             });
 
-            // 启动第一题
             renderCurrentQuestion();
+
+            container.addEventListener('dragend', function() {
+                targetSentenceDiv.classList.remove('visible');
+            });
         })();
     </script>
-    <!-- 万一 JavaScript 未能加载，显示提示（极少情况） -->
-    <noscript>
-        <div style="background:red; color:white; padding:1rem; text-align:center;">
-            您的浏览器未支持JavaScript，请启用后重试。
-        </div>
-    </noscript>
 </body>
 </html>
